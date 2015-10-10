@@ -10,13 +10,18 @@
 #include <boost/throw_exception.hpp>
 #include "exception.h"
 
+#include "types.h"
+#include "session_manager.h"
+
 namespace alexen {
 namespace learning {
 namespace server {
 
 
-AuthService::AuthService( const dao::IDaoPtr& dao )
-     : dao_( dao )
+AuthService::AuthService( const Settings& settings, const dao::IDaoPtr& dao, const ISessionManagerPtr& sessionManager )
+     : settings_( settings )
+     , dao_( dao )
+     , sessionManager_( sessionManager )
 {
 }
 
@@ -31,6 +36,10 @@ void AuthService::createSession( const protocol::CreateSessionRequest& request, 
 
      if( !authPerson )
           BOOST_THROW_EXCEPTION( Exception( ErrorCode::AuthFailed ) );
+
+     const auto sessionInfo = sessionManager_->createSessionInfo( *authPerson, settings_.expiryPeriod );
+
+     dao_->storeSessionInfo( *transaction, sessionInfo );
 
      transaction->commit();
 }

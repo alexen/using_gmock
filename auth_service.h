@@ -9,9 +9,11 @@
 
 #include <string>
 #include <cstdint>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/variant/variant.hpp>
 
 #include "dao.h"
+#include "session_manager.h"
 
 
 namespace alexen {
@@ -74,7 +76,15 @@ public:
 
 class AuthService : public IAuthService {
 public:
-     explicit AuthService( const dao::IDaoPtr& dao );
+     struct Settings {
+          explicit Settings( const boost::posix_time::time_duration& expiryPeriod_ )
+               : expiryPeriod( expiryPeriod_ )
+          {}
+
+          const boost::posix_time::time_duration& expiryPeriod;
+     };
+
+     explicit AuthService( const Settings& settings, const dao::IDaoPtr& dao, const ISessionManagerPtr& sessionManager );
 
      void createSession( const protocol::CreateSessionRequest& request, protocol::CreateSessionResponse& response ) override;
      void prolongSession( const protocol::ProlongSessionRequest& request, protocol::ProlongSessionResponse& response ) override;
@@ -82,7 +92,10 @@ public:
 private:
      void ensureRequestValid( const protocol::CreateSessionRequest& request );
 
+     const Settings settings_;
+
      dao::IDaoPtr dao_;
+     ISessionManagerPtr sessionManager_;
 };
 
 
