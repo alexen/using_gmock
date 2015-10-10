@@ -7,30 +7,21 @@
 
 #include "auth_service.h"
 
-namespace alexen {
-namespace learning {
-namespace server {
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-} // namespace server
-} // namespace learning
-} // namespace alexen
+namespace {
 
 
-#include <iostream>
-#include <boost/exception/diagnostic_information.hpp>
+class AuthServiceTest : public ::testing::Test {
+public:
+};
 
-int main()
+
+} // namespace {unnamed}
+
+
+TEST_F( AuthServiceTest, Test )
 {
-     try
-     {
 
-     }
-     catch( const std::exception& e )
-     {
-          std::cerr << "exception: " << boost::diagnostic_information( e )
-               << '\n';
-          return 1;
-     }
-
-     return 0;
 }

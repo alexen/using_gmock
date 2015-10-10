@@ -36,7 +36,7 @@ add_executable(${LIBTEST}
 
 target_link_libraries(${LIBTEST}
     ${LIBNAME}
-    ${CMAKE_THREAD_INIT_LIBS}
     ${GMOCK_LIBRARIES}
     ${GTEST_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
 )
