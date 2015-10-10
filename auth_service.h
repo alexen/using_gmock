@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <boost/variant/variant.hpp>
 
+#include "dao.h"
+
 
 namespace alexen {
 namespace learning {
@@ -20,16 +22,8 @@ namespace server {
 namespace protocol {
 
 
-enum class ErrorCode {
-     InternalServerError,
-     InvalidRequest,
-     AuthFailed,
-     SessionExpired
-};
-
-
 struct Error {
-     ErrorCode code;
+     int code;
      std::string message;
 };
 
@@ -37,6 +31,7 @@ struct Error {
 struct CreateSessionRequest {
      std::string login;
      std::string password;
+     bool admin;
 };
 
 
@@ -79,12 +74,15 @@ public:
 
 class AuthService : public IAuthService {
 public:
-     AuthService();
+     explicit AuthService( const dao::IDaoPtr& dao );
 
      void createSession( const protocol::CreateSessionRequest& request, protocol::CreateSessionResponse& response ) override;
      void prolongSession( const protocol::ProlongSessionRequest& request, protocol::ProlongSessionResponse& response ) override;
 
 private:
+     void ensureRequestValid( const protocol::CreateSessionRequest& request );
+
+     dao::IDaoPtr dao_;
 };
 
 

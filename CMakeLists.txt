@@ -26,6 +26,7 @@ set(LIBNAME authservice)
 
 add_library(${LIBNAME}
     auth_service.cpp
+    exception.cpp
 )
 
 set(LIBTEST ${LIBNAME}-test)
