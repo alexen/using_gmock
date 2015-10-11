@@ -1,6 +1,3 @@
-///
-/// auth_service_test.cpp
-///
 /// Created on: 10 окт. 2015 г.
 ///     Author: alexen
 ///
