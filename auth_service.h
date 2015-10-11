@@ -8,7 +8,7 @@
 #pragma once
 
 #include <string>
-#include <cstdint>
+#include <ctime>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/variant/variant.hpp>
 
@@ -37,18 +37,18 @@ struct CreateSessionRequest {
 };
 
 
-using SessionExpirationTime = std::uint64_t;
+using SessionExpirationTime = std::time_t;
 
 
 struct SessionInfo {
-     std::string sesionId;
+     std::string sessionId;
      std::string userId;
      SessionExpirationTime expiresAt;
 };
 
 
 struct CreateSessionResponse {
-     boost::variant< Error, SessionInfo > response;
+     boost::variant< Error, SessionInfo > data;
 };
 
 
@@ -58,7 +58,7 @@ struct ProlongSessionRequest {
 
 
 struct ProlongSessionResponse {
-     boost::variant< Error, SessionExpirationTime > response;
+     boost::variant< Error, SessionExpirationTime > data;
 };
 
 
