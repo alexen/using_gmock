@@ -1,6 +1,3 @@
-///
-/// auth_service_test.cpp
-///
 /// Created on: 10 окт. 2015 г.
 ///     Author: alexen
 ///
@@ -131,7 +128,7 @@ public:
 
      const protocol::Error& error() const
      {
-          BOOST_ASSERT( !!error_ );
+          BOOST_ASSERT( hasError() );
           return *error_;
      }
 
