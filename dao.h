@@ -38,7 +38,7 @@ public:
 
      virtual boost::optional< Person > findPerson( ITransaction& tr, const std::string& login, const std::string& password, bool admin ) = 0;
 
-     virtual std::size_t storeSessionInfo( ITransaction& tr, const SessionInfo& sessionInfo ) = 0;
+     virtual void storeSessionInfo( ITransaction& tr, const SessionInfo& sessionInfo ) = 0;
 };
 
 using IDaoPtr = boost::shared_ptr< IDao >;

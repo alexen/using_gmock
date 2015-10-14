@@ -58,10 +58,7 @@ void AuthService::createSession( const protocol::CreateSessionRequest& request, 
 
      const auto sessionInfo = sessionManager_->createSessionInfo( *authPerson, settings_.expiryPeriod );
 
-     const auto rowsAffected = dao_->storeSessionInfo( *transaction, sessionInfo );
-
-     if( rowsAffected != 1 )
-          BOOST_THROW_EXCEPTION( Exception( ErrorCode::InternalServerError ) );
+     dao_->storeSessionInfo( *transaction, sessionInfo );
 
      transaction->commit();
 

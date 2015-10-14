@@ -4,7 +4,7 @@
 
 #include "auth_service.h"
 
-#include <algorithm>
+#include <numeric>
 
 #include <boost/variant.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -18,11 +18,14 @@
 
 #include "session_manager.h"
 #include "utils.h"
+#include "exception.h"
 
 
 namespace {
 
 
+using alexen::learning::server::Exception;
+using alexen::learning::server::ErrorCode;
 using alexen::learning::server::dao::ITransaction;
 using alexen::learning::server::dao::ITransactionPtr;
 using alexen::learning::server::dao::IDao;
@@ -49,7 +52,7 @@ class MockDao : public IDao {
 public:
      MOCK_METHOD0( beginTransaction, ITransactionPtr( void ) );
      MOCK_METHOD4( findPerson, boost::optional< Person >( ITransaction& tr, const std::string& login, const std::string& password, bool admin ) );
-     MOCK_METHOD2( storeSessionInfo, std::size_t( ITransaction& tr, const SessionInfo& sessionInfo ) );
+     MOCK_METHOD2( storeSessionInfo, void( ITransaction& tr, const SessionInfo& sessionInfo ) );
 };
 
 
@@ -58,6 +61,23 @@ public:
      MOCK_CONST_METHOD2( createSessionInfo, SessionInfo( const Person& person, const boost::posix_time::time_duration& expiryPeriod ) );
      MOCK_CONST_METHOD1( generateSessionId, std::string( bool adminSession ) );
      MOCK_CONST_METHOD0( generateUniqueSequence, std::string( void ) );
+};
+
+
+class AuthServiceTest : public ::testing::Test {
+public:
+     AuthServiceTest()
+          : settings( boost::posix_time::minutes( 15 ) )
+          , dao( boost::make_shared< MockDao >() )
+          , sessionManager( boost::make_shared< MockSessionManager >() )
+          , authService( settings, dao, sessionManager )
+     {}
+
+protected:
+     const AuthService::Settings settings;
+     boost::shared_ptr< MockDao > dao;
+     boost::shared_ptr< MockSessionManager > sessionManager;
+     AuthService authService;
 };
 
 
@@ -141,48 +161,55 @@ private:
 } // namespace {unnamed}
 
 
-TEST( AuthServiceTest, SuccessAuthorization )
+TEST_F( AuthServiceTest, SuccessAuthorization )
 {
      using namespace ::testing;
 
-     const auto request = createRequest();
-     const auto person = generatePerson();
-
-     auto dao = boost::make_shared< MockDao >();
      auto transaction = boost::make_shared< MockTransaction >();
-     auto sessionManager = boost::make_shared< MockSessionManager >();
-
-     const AuthService::Settings settings( boost::posix_time::minutes( 15 ) );
-
-     const auto sessionInfo = createSessionInfo( person, settings.expiryPeriod );
 
      EXPECT_CALL( *dao, beginTransaction() )
           .WillOnce( Return( transaction ) );
 
-     EXPECT_CALL( *dao, findPerson( Ref( *transaction ), request.login, request.password, request.admin ) )
-          .WillOnce( Return( person ) );
+     EXPECT_CALL( *dao, findPerson( _, _, _, _ ) )
+          .WillOnce( Return( Person() ) );
 
-     EXPECT_CALL( Const( *sessionManager ), createSessionInfo( person, settings.expiryPeriod ) )
-          .WillOnce( Return( sessionInfo ) );
+     EXPECT_CALL( *sessionManager, createSessionInfo( _, _ ) )
+          .WillOnce( Return( SessionInfo() ) );
 
-     EXPECT_CALL( *dao, storeSessionInfo( Ref( *transaction ), sessionInfo ) )
-          .WillOnce( Return( 1 ) );
+     EXPECT_CALL( *dao, storeSessionInfo( _, _ ) )
+          .WillOnce( Return() );
 
      EXPECT_CALL( *transaction, commit() )
           .WillOnce( Return() );
 
+     CreateSessionRequest request = createRequest();
      CreateSessionResponse response;
 
-     AuthService( settings, dao, sessionManager ).createSession( request, response );
+     ASSERT_NO_THROW( authService.createSession( request, response ) );
+}
 
-     CreateSessionResponseExtractor responseExtractor;
 
-     boost::apply_visitor( responseExtractor, response.data );
+TEST_F( AuthServiceTest, CreateSession_InvalidRequest )
+{
+     CreateSessionRequest request;
+     CreateSessionResponse response;
 
-     ASSERT_FALSE( responseExtractor.hasError() );
-     ASSERT_TRUE( responseExtractor.hasSessionInfo() );
+     boost::optional< ErrorCode > errorCode;
 
-     ASSERT_EQ( boost::uuids::to_string( person.id ), responseExtractor.sessionInfo().userId );
-     ASSERT_GE( alexen::learning::toTime_t( sessionInfo.expiresAt ), responseExtractor.sessionInfo().expiresAt );
-     ASSERT_EQ( sessionInfo.sessionId, responseExtractor.sessionInfo().sessionId );
+     try
+     {
+          authService.createSession( request, response );
+
+          FAIL() << "Exception expected";
+     }
+     catch( const Exception& e )
+     {
+          errorCode = e.errorCode();
+     }
+     catch( ... )
+     {
+          FAIL() << "Unexpected exception type";
+     }
+
+     ASSERT_EQ( errorCode, ErrorCode::InvalidRequest);
 }
